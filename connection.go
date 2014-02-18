@@ -31,7 +31,7 @@ func (c *Connection) Close() error {
 
 func (c *Connection) Next() (*Tweet, error) {
     tweet := &Tweet{}
-    c.conn.SetReadDeadline(time.Now().Add(c.timeout))
+    // c.conn.SetReadDeadline(time.Now().Add(c.timeout))
     opening := 0
     closing := 0
     buff := make([]byte,0,1024)
