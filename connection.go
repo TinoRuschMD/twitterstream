@@ -16,6 +16,7 @@ type Connection struct {
     client  *http.Client
     closer  io.Closer
     timeout time.Duration
+    tweetBuff []byte
 }
 
 func (c *Connection) Close() error {
@@ -29,12 +30,34 @@ func (c *Connection) Close() error {
 }
 
 func (c *Connection) Next() (*Tweet, error) {
-    var tweet Tweet
+    tweet := &Tweet{}
     c.conn.SetReadDeadline(time.Now().Add(c.timeout))
-    if err := c.decoder.Decode(&tweet); err != nil {
-        return nil, err
+    opening := 0
+    closing := 0
+    buff := make([]byte,0,1024)
+    for {
+        bs,err := c.conn.Read(buff[0:])
+        if err!=nil {
+            return nil,err
+        }
+        for _,b := range buff[:bs] {
+            if b=='{' {
+                opening += 1
+            }
+            if b=='}' {
+                closing += 1
+            }
+            c.tweetBuff = append(c.tweetBuff,b)
+            if opening > 0 && opening == closing {
+                if err := c.decoder.Decode(&tweet); err != nil {
+                    c.tweetBuff = c.tweetBuff[:0]
+                    return nil, err
+                }
+                c.tweetBuff = c.tweetBuff[:0]
+                return tweet,nil
+            }
+        }
     }
-    return &tweet, nil
 }
 
 func (c *Connection) setup(rc io.ReadCloser) {
