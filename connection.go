@@ -49,7 +49,7 @@ func (c *Connection) Next() (*Tweet, error) {
             }
             c.tweetBuff = append(c.tweetBuff,b)
             if opening > 0 && opening == closing {
-                if err := c.decoder.Decode(&tweet); err != nil {
+                if err := json.Unmarshal(c.tweetBuff,tweet); err != nil {
                     c.tweetBuff = c.tweetBuff[:0]
                     return nil, err
                 }
